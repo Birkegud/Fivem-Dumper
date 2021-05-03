@@ -77,7 +77,6 @@ function Dumper:GetStartFile(Resource)
 	end
 end
 
-
 function Dumper:ClientDump(Resource)
     if not Resource then Resource = "All" end
     if Resource:lower() == "all" then
