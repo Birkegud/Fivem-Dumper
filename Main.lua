@@ -26,7 +26,7 @@ function Dumper:GetFiles(Resource, File, Side)
     if not Side then Side = "Client" end
     local Files = {}
     local Code = LoadResourceFile(Resource, File)
-    if not Code then self:AddLog("^1Failed^7", "GetFiles: Code was nil. Resource" .. Resource .. " File: " .. File) return Files end
+    if not Code then return Files end
 
     local RegexTable = {
         Server = {
