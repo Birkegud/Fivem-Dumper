@@ -29,21 +29,21 @@ function Dumper:GetFiles(Resource, File, Side)
     if not Code then return Files end
 
     local RegexTable = {
-        Server = {
-            "server_scripts% {.-%}",
-			"server_script% {.-%}",
-			"server_script% '.-%'",
-			'server_script% ".-%"',
-			"server_scripts%{.-%}",
-			"server_script%{.-%}"
-        },
         Client = {
             "client_scripts% {.-%}",
 			"client_script% {.-%}",
 			"client_script% '.-%'",
 			'client_script% ".-%"',
 			"client_script%{.-%}",
-			"client_scripts%{.-%}"
+			"client_scripts%{.-%}",
+			"loadscreen%{.-%}",
+            "loadscreen% {.-%}",
+			"ui_page%{.-%}",
+            "ui_page% {.-%}",
+			"file%{.-%}",
+            "file% {.-%}",
+			"files%{.-%}",
+            "files% {.-%}",
         },
         CleanUp = {
             "'.-'",
