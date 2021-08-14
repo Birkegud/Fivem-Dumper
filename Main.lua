@@ -19,7 +19,7 @@ function dumper:getFiles(resource, file, side)
     if not code then return files end
 
     local regexTable = {
-        Client = {
+        client = {
             "client_scripts% {.-%}",
 			"client_script% {.-%}",
 			"client_script% '.-%'",
@@ -37,7 +37,7 @@ function dumper:getFiles(resource, file, side)
             "shared_script%{.-%}",
             "shared_script% {.-%}"
         },
-        CleanUp = {
+        cleanUp = {
             "'.-'",
             '".-"'
         }
@@ -45,7 +45,7 @@ function dumper:getFiles(resource, file, side)
 
     for k, regex in pairs(regexTable[side]) do
         for m in string.gmatch(code, regex) do
-            for k, cleanRegex in pairs(regexTable["CleanUp"]) do
+            for k, cleanRegex in pairs(regexTable["cleanUp"]) do
                 for cleaned_Match in string.gmatch(m, cleanRegex) do
                     cleaned_Match = string.gsub(cleaned_Match, '"', "")
                     cleaned_Match = string.gsub(cleaned_Match, "'", "")
@@ -70,7 +70,7 @@ function dumper:getStartFile(resource)
 end
 
 function dumper:getTriggers(code)
-    local regexs = {"TriggerServerEvent%(.-%)"}
+    local regexs = {"TriggerServerEvent%(.-%)", "TriggerEvent%(.-%)", "TriggerClientEvent%(.-%)"}
     local triggers = {}
     for k, r in pairs(regexs) do
         for m in string.gmatch(code, r) do
@@ -99,7 +99,7 @@ function dumper:clientDump(resource)
         local code = LoadResourceFile(resource, file)
         if code then
             local triggers = self:getTriggers(code)
-            dumpedFiles[file] = {["code"] = code, ["triggers"] = triggers}
+            dumpedFiles[file] = {["code"] = code, ["triggers"] = (triggers or {})}
         end
     end
 
@@ -110,4 +110,11 @@ for i, r in pairs(dumper:getResources()) do
     dumper.client[r] = dumper:clientDump(r)
 end
 
+
 dumper:printTable(dumper.client)
+
+for r, tbl in pairs(dumper.client) do
+    for f, _tbl in pairs(tbl) do
+        dumper:printTable(_tbl.triggers)
+    end
+end
