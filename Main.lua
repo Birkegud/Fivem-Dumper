@@ -1,6 +1,5 @@
 local dumper = {
     client = {},
-    triggers = {}
 }
 
 function dumper:getResources()
