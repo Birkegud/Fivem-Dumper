@@ -1,18 +1,9 @@
-local Dumper = {
-    Client = {}
+local dumper = {
+    client = {},
+    triggers = {}
 }
 
-function Dumper:PrintTable(Table)
-    for k, v in pairs(Table) do
-        if type(v) == "table" then
-            self:PrintTable(v)
-        else
-            print(k, v)
-        end
-    end
-end
-
-function Dumper:GetResources()
+function dumper:getResources()
 	local resources = {}
 	for i = 1, GetNumResources() do
 		resources[i] = GetResourceByFindIndex(i)
@@ -21,14 +12,14 @@ function Dumper:GetResources()
 	return resources
 end
 
-function Dumper:GetFiles(Resource, File, Side)
-	if not File then return end
-    if not Side then Side = "Client" end
-    local Files = {}
-    local Code = LoadResourceFile(Resource, File)
-    if not Code then return Files end
+function dumper:getFiles(resource, file, side)
+	if not file then return end
+    if not side then side = "Client" end
+    local files = {}
+    local code = LoadResourceFile(resource, file)
+    if not code then return files end
 
-    local RegexTable = {
+    local regexTable = {
         Client = {
             "client_scripts% {.-%}",
 			"client_script% {.-%}",
@@ -44,6 +35,8 @@ function Dumper:GetFiles(Resource, File, Side)
             "file% {.-%}",
 			"files%{.-%}",
             "files% {.-%}",
+            "shared_script%{.-%}",
+            "shared_script% {.-%}"
         },
         CleanUp = {
             "'.-'",
@@ -51,57 +44,71 @@ function Dumper:GetFiles(Resource, File, Side)
         }
     }
 
-    for k, Regex in pairs(RegexTable[Side]) do
-        for Match in string.gmatch(Code, Regex) do
-            for k, CleanRegex in pairs(RegexTable["CleanUp"]) do
-                for Cleaned_Match in string.gmatch(Match, CleanRegex) do
-                    Cleaned_Match = string.gsub(Cleaned_Match, '"', "")
-                    Cleaned_Match = string.gsub(Cleaned_Match, "'", "")
-                    table.insert(Files, Cleaned_Match)
+    for k, regex in pairs(regexTable[side]) do
+        for m in string.gmatch(code, regex) do
+            for k, cleanRegex in pairs(regexTable["CleanUp"]) do
+                for cleaned_Match in string.gmatch(m, cleanRegex) do
+                    cleaned_Match = string.gsub(cleaned_Match, '"', "")
+                    cleaned_Match = string.gsub(cleaned_Match, "'", "")
+                    table.insert(files, cleaned_Match)
                 end
             end
         end
     end
 
-    return Files
+    return files
 end
 
-function Dumper:GetStartFile(Resource)
-	if Resource == nil then return end
-	if LoadResourceFile(Resource, "fxmanifest.lua") ~= nil then
+function dumper:getStartFile(resource)
+	if resource == nil then return end
+	if LoadResourceFile(resource, "fxmanifest.lua") ~= nil then
 		return "fxmanifest"
-	elseif LoadResourceFile(Resource, "__resource.lua") ~= nil then
+	elseif LoadResourceFile(resource, "__resource.lua") ~= nil then
 		return "__resource"
 	else
 		return ""
 	end
 end
 
-function Dumper:ClientDump(Resource)
-    if not Resource then Resource = "All" end
-    if Resource:lower() == "all" then
-        for k, ResourceName in pairs(self:GetResources()) do
-            local Files = self:GetFiles(ResourceName, self:GetStartFile(ResourceName) .. ".lua")
-            self["Client"][ResourceName] = {}
-            for k, FileName in pairs(Files) do
-                self["Client"][ResourceName][FileName] = LoadResourceFile(ResourceName,  FileName)                
-                if LoadResourceFile(ResourceName,  FileName) == nil or "" then
-                    print("ClientDump: The File: " .. FileName .. " in the resource: " .. Resource .. " was nil")
-                end
-            end
+function dumper:getTriggers(code)
+    local regexs = {"TriggerServerEvent%(.-%)"}
+    local triggers = {}
+    for k, r in pairs(regexs) do
+        for m in string.gmatch(code, r) do
+            table.insert(triggers, m)
         end
-    else
-        local Files = self:GetFiles(Resource, self:GetStartFile(Resource) .. ".lua")
-        for k, FileName in pairs(Files) do
-            self["Client"][Resource] = {}
-            self["Client"][Resource][FileName] = LoadResourceFile(Resource,  FileName)
-            if LoadResourceFile(Resource,  FileName) == nil or "" then
-                print("ClientDump: The File: " .. FileName .. " in the resource: " .. Resource .. " was nil")
-            end
+    end
+
+    return triggers
+end
+
+function dumper:printTable(table)
+    for k, v in pairs(table) do
+        if type(v) == "table" then
+            self:printTable(v)
+        else
+            print(k, v)
         end
     end
 end
 
-Dumper:ClientDump()
+function dumper:clientDump(resource)
+    local startFile = self:getStartFile(resource)
+    local files = self:getFiles(resource, startFile .. ".lua")
+    local dumpedFiles = {}
+    for i, file in pairs(files) do
+        local code = LoadResourceFile(resource, file)
+        if code then
+            local triggers = self:getTriggers(code)
+            dumpedFiles[file] = {["code"] = code, ["triggers"] = triggers}
+        end
+    end
 
-Dumper:PrintTable(Dumper.Client)
+    return dumpedFiles
+end
+
+for i, r in pairs(dumper:getResources()) do
+    dumper.client[r] = dumper:clientDump(r)
+end
+
+dumper:printTable(dumper.client)
