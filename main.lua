@@ -27,7 +27,7 @@ function dumper:getFiles(res, cfg)
     res = (res or GetCurrentResourceName())
     cfg = (cfg or self.cfg)
     self.client[res] = {}
-    for i, metaKey in pairs(cfg) do
+    for i, metaKey in ipairs(cfg) do
         for idx = 0, GetNumResourceMetadata(res, metaKey) -1 do
             local file = (GetResourceMetadata(res, metaKey, idx) or "none")
             local code = (LoadResourceFile(res, file) or "")
